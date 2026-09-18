@@ -13,7 +13,12 @@ from chat_research import published, parse_bundle, trends, growth, request_text
 
 def render_research(store, state, sample_mode):
     theme()
-    hero('내 투자의 현재를 한눈에', '관심 있는 기업을 담고, 판단에 필요한 변화만 확인하세요.', 'PLANX · STOCK RESEARCH')
+    st.markdown("""
+<div class="dash-welcome">
+  <h1>안녕하세요! 👋</h1>
+  <p>오늘의 시장과 내 관심종목을 한눈에 확인하세요.</p>
+</div>
+""", unsafe_allow_html=True)
     if sample_mode:
         st.info('둘러보기 중입니다. 개인 목록을 저장하려면 먼저 대시보드 비밀번호를 설정하세요.')
     else:
