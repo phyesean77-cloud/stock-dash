@@ -243,18 +243,18 @@ section[data-testid="stSidebar"] .planx-brand-sub { color:#806e50; font-size:13p
 }
 
 /* Final bright dashboard overrides */
-:root{--bg:#F5F8FC;--surface:#FFFFFF;--line:#E5EAF2;--text:#14213D;--muted:#718096;--blue:#2563EB;}
-.stApp{background:#F5F8FC!important;color:#14213D!important}
+:root{--bg:#0B0F14;--surface:#121821;--line:#263241;--text:#F3F6FA;--muted:#9AA7B8;--blue:#3B82F6;}
+.stApp{background:#0B0F14!important;color:#F3F6FA!important}
 .block-container{max-width:1500px!important;padding-top:1.1rem!important}
-section[data-testid="stSidebar"]{background:#FFFFFF!important;border-right:1px solid #E5EAF2!important}
+section[data-testid="stSidebar"]{background:#0E141C!important;border-right:1px solid #263241!important}
 section[data-testid="stSidebar"] .planx-brand-mark{background:linear-gradient(135deg,#2563EB,#60A5FA)!important}
-section[data-testid="stSidebar"] .planx-brand-title{color:#14213D!important}
-section[data-testid="stSidebar"] .planx-brand-sub{color:#8A96A8!important}
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{color:#4B5B73!important;border-radius:11px!important;padding:11px 12px!important}
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){background:#EAF2FF!important;box-shadow:inset 3px 0 #2563EB!important;color:#1D4ED8!important}
-.planx-hero{background:linear-gradient(135deg,#fff 0%,#f8fbff 55%,#eff6ff 100%)!important;border:1px solid #E2E8F0!important;border-radius:20px!important;box-shadow:0 10px 30px rgba(15,23,42,.04)!important}
+section[data-testid="stSidebar"] .planx-brand-title{color:#F3F6FA!important}
+section[data-testid="stSidebar"] .planx-brand-sub{color:#9AA7B8!important}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{color:#C3CEDB!important;border-radius:11px!important;padding:11px 12px!important}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){background:#17263B!important;box-shadow:inset 3px 0 #3B82F6!important;color:#93C5FD!important}
+.planx-hero{background:linear-gradient(135deg,#121821 0%,#151D28 55%,#17263B 100%)!important;border:1px solid #263241!important;border-radius:20px!important;box-shadow:0 10px 30px rgba(15,23,42,.04)!important}
 .planx-eyebrow{color:#2563EB!important}
-.planx-card{background:#fff!important;border:1px solid #E5EAF2!important;border-top:0!important;border-radius:16px!important;box-shadow:0 5px 18px rgba(28,48,80,.035)!important}
+.planx-card{background:#121821!important;border:1px solid #263241!important;border-top:0!important;border-radius:16px!important;box-shadow:0 5px 18px rgba(28,48,80,.035)!important}
 
 </style>
 """,
