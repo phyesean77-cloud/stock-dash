@@ -89,6 +89,36 @@ def _major_indices():
             continue
     return rows
 
+def _render_major_indices():
+    """Render the major market indices near the top of the dashboard."""
+    with st.container(border=True):
+        st.markdown(
+            '<div class="panel-head"><div><span class="panel-kicker">MARKET INDEX</span>'
+            '<h3>주요 지수</h3></div><span style="font-size:11px;color:#94A3B8;">5분 캐시</span></div>',
+            unsafe_allow_html=True,
+        )
+        indices = _major_indices()
+        if indices:
+            index_cols = st.columns(len(indices), gap="small")
+            for col, item in zip(index_cols, indices):
+                with col:
+                    pct = item["pct"]
+                    change = item["change"]
+                    cls = _trend_class(pct)
+                    pct_text = f"{pct:+.2f}%" if pct is not None else "-"
+                    change_text = f"{change:+,.2f}" if change is not None else "-"
+                    st.markdown(
+                        f'<div class="stat-card" style="min-height:100px;padding:15px 16px;">'
+                        f'<div class="stat-label">{html.escape(item["label"])}</div>'
+                        f'<div class="stat-value" style="font-size:21px;margin-top:6px;">{item["price"]:,.2f}</div>'
+                        f'<div class="stat-sub {cls}" style="font-weight:700;">{change_text} ({pct_text})</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+        else:
+            st.info("주요 지수 데이터를 불러오지 못했습니다.")
+        st.caption("KOSPI · KOSDAQ · S&P 500 · NASDAQ · Dow · Nikkei 225 · Yahoo Finance 기준")
+
 
 def overview(details, snapshot):
     """Bright, glanceable home dashboard.
@@ -103,6 +133,9 @@ def overview(details, snapshot):
         '<div class="home-section-title"><span>MY DASHBOARD</span><h2>내 투자 현황</h2></div>',
         unsafe_allow_html=True,
     )
+
+    # 주요 지수는 홈 화면 최상단에서 한눈에 확인합니다.
+    _render_major_indices()
 
     if positions:
         value = sum(float(p.get("value", 0) or 0) for p in positions)
@@ -220,7 +253,7 @@ def overview(details, snapshot):
                 st.info("관심종목을 추가해 주세요.")
 
     # ---------- bottom row ----------
-    left2, mid2, right2 = st.columns([1.35, 1, 1], gap="large")
+    left2, mid2 = st.columns([1.35, 1], gap="large")
 
     with left2:
         with st.container(border=True):
@@ -266,27 +299,6 @@ def overview(details, snapshot):
             else:
                 st.caption("계좌 연결 후 종목별 평가금액 비중을 확인할 수 있습니다.")
 
-    with right2:
-        with st.container(border=True):
-            st.markdown('<div class="panel-head"><div><span class="panel-kicker">MARKET INDEX</span><h3>주요 지수</h3></div><span style="font-size:11px;color:#94A3B8;">5분 캐시</span></div>', unsafe_allow_html=True)
-            indices = _major_indices()
-            if indices:
-                for item in indices:
-                    pct = item["pct"]
-                    change = item["change"]
-                    cls = _trend_class(pct)
-                    pct_text = f"{pct:+.2f}%" if pct is not None else "-"
-                    change_text = f"{change:+,.2f}" if change is not None else "-"
-                    st.markdown(
-                        f'<div class="research-row"><div><strong>{html.escape(item["label"])}</strong>'
-                        f'<span style="display:block;font-size:10px;color:#94A3B8;">{html.escape(item["key"])}</span></div>'
-                        f'<div style="text-align:right;"><strong>{item["price"]:,.2f}</strong>'
-                        f'<span class="{cls}" style="display:block;font-size:11px;font-weight:700;">{change_text} ({pct_text})</span></div></div>',
-                        unsafe_allow_html=True,
-                    )
-            else:
-                st.info("주요 지수 데이터를 불러오지 못했습니다.")
-            st.caption("KOSPI · KOSDAQ · S&P 500 · NASDAQ · Dow · Nikkei 225 · Yahoo Finance 기준")
 
 
 def detail(r):
