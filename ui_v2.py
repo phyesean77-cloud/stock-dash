@@ -241,6 +241,21 @@ section[data-testid="stSidebar"] .planx-brand-sub { color:#806e50; font-size:13p
   .planx-card { min-height:100px; padding:14px; }
   .planx-card-value { font-size:23px; }
 }
+
+/* Final bright dashboard overrides */
+:root{--bg:#F5F8FC;--surface:#FFFFFF;--line:#E5EAF2;--text:#14213D;--muted:#718096;--blue:#2563EB;}
+.stApp{background:#F5F8FC!important;color:#14213D!important}
+.block-container{max-width:1500px!important;padding-top:1.1rem!important}
+section[data-testid="stSidebar"]{background:#FFFFFF!important;border-right:1px solid #E5EAF2!important}
+section[data-testid="stSidebar"] .planx-brand-mark{background:linear-gradient(135deg,#2563EB,#60A5FA)!important}
+section[data-testid="stSidebar"] .planx-brand-title{color:#14213D!important}
+section[data-testid="stSidebar"] .planx-brand-sub{color:#8A96A8!important}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{color:#4B5B73!important;border-radius:11px!important;padding:11px 12px!important}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){background:#EAF2FF!important;box-shadow:inset 3px 0 #2563EB!important;color:#1D4ED8!important}
+.planx-hero{background:linear-gradient(135deg,#fff 0%,#f8fbff 55%,#eff6ff 100%)!important;border:1px solid #E2E8F0!important;border-radius:20px!important;box-shadow:0 10px 30px rgba(15,23,42,.04)!important}
+.planx-eyebrow{color:#2563EB!important}
+.planx-card{background:#fff!important;border:1px solid #E5EAF2!important;border-top:0!important;border-radius:16px!important;box-shadow:0 5px 18px rgba(28,48,80,.035)!important}
+
 </style>
 """,
         unsafe_allow_html=True,
