@@ -286,15 +286,29 @@ def overview(details, snapshot):
                     for p in positions if float(p.get("value", 0) or 0) > 0
                 ])
                 if not df.empty:
-                    chart = alt.Chart(df).mark_arc(innerRadius=48, outerRadius=82).encode(
-                        theta="평가액:Q",
-                        color=alt.Color(
-                            "종목:N",
-                            scale=alt.Scale(range=["#2563EB", "#60A5FA", "#93C5FD", "#CBD5E1", "#64748B", "#1E3A8A"]),
-                            legend=alt.Legend(orient="bottom", columns=2),
-                        ),
-                        tooltip=["종목", alt.Tooltip("평가액:Q", format=",.0f")],
-                    ).properties(height=255)
+                    df["비중"] = df["평가액"] / df["평가액"].sum()
+                    color = alt.Color(
+                        "종목:N",
+                        scale=alt.Scale(range=["#2563EB", "#60A5FA", "#93C5FD", "#CBD5E1", "#64748B", "#1E3A8A", "#1D4ED8", "#93C5FD"]),
+                        legend=alt.Legend(orient="bottom", columns=2, title=None),
+                    )
+                    base = alt.Chart(df).encode(
+                        theta=alt.Theta("평가액:Q", stack=True),
+                        color=color,
+                        tooltip=[
+                            alt.Tooltip("종목:N", title="종목"),
+                            alt.Tooltip("평가액:Q", format=",.0f", title="평가금액"),
+                            alt.Tooltip("비중:Q", format=".1%", title="비중"),
+                        ],
+                    )
+                    pie = base.mark_arc(innerRadius=52, outerRadius=88, stroke="#FFFFFF", strokeWidth=2)
+                    labels = base.transform_filter(
+                        alt.datum.비중 >= 0.04
+                    ).mark_text(radius=108, fontSize=12, fontWeight="bold").encode(
+                        text=alt.Text("비중:Q", format=".1%"),
+                        color=alt.value("#14213D"),
+                    )
+                    chart = (pie + labels).properties(height=285)
                     draw(chart)
             else:
                 st.caption("계좌 연결 후 종목별 평가금액 비중을 확인할 수 있습니다.")
