@@ -34,62 +34,209 @@ def draw(chart):
                     .configure_legend(labelColor=INK,titleColor=INK,labelFontSize=13), use_container_width=True)
 
 
+def _fmt_money(value):
+    try:
+        return f"{float(value):,.0f}원"
+    except Exception:
+        return "-"
+
+
+def _trend_class(value):
+    try:
+        return "up" if float(value) >= 0 else "down"
+    except Exception:
+        return "neutral"
+
+
 def overview(details, snapshot):
+    """Bright, glanceable home dashboard.
+
+    All figures come from the stored research/account snapshot; no values are fabricated.
+    """
     reports = [r for _, r, _, _ in details.values() if r]
-    positions = (snapshot or {}).get('positions', [])
-    a,b,c = st.columns(3)
+    positions = (snapshot or {}).get("positions", [])
+
+    # ---------- top summary ----------
+    st.markdown(
+        '<div class="home-section-title"><span>MY DASHBOARD</span><h2>내 투자 현황</h2></div>',
+        unsafe_allow_html=True,
+    )
+
     if positions:
-        value = sum(float(p['value']) for p in positions)
-        pnl = sum(float(p['pnl']) for p in positions)
-        a.metric('국내주식 평가금액', f'{value:,.0f}원')
-        b.metric('평가손익', f'{pnl:+,.0f}원', f'{pnl/(value-pnl)*100:+.1f}%' if value-pnl>0 else None)
-        c.metric('보유 / 관심종목', f'{len(positions)} / {len(details)}')
-        st.caption('계좌 조회 시점 기준 · 예수금 제외 · ' + str(snapshot.get('fetched','')))
+        value = sum(float(p.get("value", 0) or 0) for p in positions)
+        pnl = sum(float(p.get("pnl", 0) or 0) for p in positions)
+        cost = value - pnl
+        pnl_pct = pnl / cost * 100 if cost else 0
+        cards = [
+            ("총 평가금액", _fmt_money(value), "계좌 조회 기준"),
+            ("평가손익", f"{pnl:+,.0f}원", f"{pnl_pct:+.1f}%", _trend_class(pnl)),
+            ("보유 종목", f"{len(positions)}개", f"관심종목 {len(details)}개"),
+            ("조사 완료", f"{len(reports)}개", f"추가 조사 {max(0, len(details)-len(reports))}개"),
+        ]
     else:
-        a.metric('내 관심종목', f'{len(details)}개')
-        b.metric('조사 자료 보유', f'{len(reports)}개')
-        c.metric('추가 조사 필요', f'{len(details)-len(reports)}개')
-    left,right=st.columns([1,1.5],gap='large')
-    with left, st.container(border=True):
-        st.subheader('어디에 투자하고 있나요?')
-        if positions:
-            df=pd.DataFrame([{'종목':p['name'],'평가액':p['value']} for p in positions if p['value']>0])
-            if not df.empty:
-                df['비중']=df['평가액']/df['평가액'].sum()
-                draw(alt.Chart(df).mark_arc(innerRadius=65,outerRadius=105).encode(
-                    theta='평가액:Q',color=alt.Color('종목:N',scale=alt.Scale(range=[GOLD,TEAL,'#b96b50','#71809a','#c4ae82']),legend=alt.Legend(orient='bottom')),
-                    tooltip=['종목',alt.Tooltip('평가액:Q',format=',.0f'),alt.Tooltip('비중:Q',format='.1%')]).properties(height=245))
-                st.caption('조회된 국내주식 평가액 기준 · 현금 제외')
-        else:
-            st.markdown('**계좌를 연결하면 보유 비중을 보여드립니다.**')
-            st.write('관심종목만 등록해도 오른쪽에서 기업별 실적을 비교할 수 있습니다.')
-            st.caption('왼쪽 메뉴 → 계좌 연결')
-            st.markdown(' · '.join(html.escape(s['name']) for s,_,_,_ in details.values()))
-    with right, st.container(border=True):
-        st.subheader('이익이 더 빠르게 늘어나는 기업은?')
-        groups=defaultdict(list)
-        for r in reports:
-            f=r.get('financial')
-            if f:
-                key=(f['period'],f['prior_period'],f['basis'],f['currency'],f['unit'])
-                groups[key].append((r,f))
-        if not groups:
-            st.info('종목 조사 결과가 들어오면 실적 그래프가 표시됩니다.')
-        else:
-            keys=list(groups)
-            key=st.selectbox('비교 기간·기준',keys,format_func=lambda k:f'{k[0]} 누적 / 전년 {k[1]} · {k[2]}',key='bi_period') if len(keys)>1 else keys[0]
-            bars=[]; special=[]
-            for r,f in groups[key]:
-                prior=f['prior_operating_profit'];now=f['operating_profit']
-                if prior>0:bars.append({'종목':r['name'],'증가율':(now/prior-1)*100})
-                else:special.append(r['name']+' · 전년 이익이 0 이하: 상세 실적 확인')
-            if bars:
-                df=pd.DataFrame(bars)
-                draw(alt.Chart(df).mark_bar(cornerRadiusEnd=4,color=GOLD).encode(
-                    x=alt.X('증가율:Q',title='누적 영업이익 증가율 (%)'),y=alt.Y('종목:N',sort='-x',title=None),
-                    tooltip=['종목',alt.Tooltip('증가율:Q',format='+.1f')]).properties(height=245))
-            st.caption(f'{key[0]} / {key[1]} · {key[2]} · 같은 기간과 회계기준의 기업만 비교')
-            for text in special:st.caption(text)
+        cards = [
+            ("관심종목", f"{len(details)}개", "내 관심 목록"),
+            ("조사 완료", f"{len(reports)}개", f"추가 조사 {max(0, len(details)-len(reports))}개"),
+            ("계좌 연결", "연결 필요", "보유자산을 보려면 계좌 연결"),
+            ("데이터 상태", "정상", "저장된 조사자료 기준"),
+        ]
+
+    cols = st.columns(4, gap="medium")
+    for i, item in enumerate(cards):
+        with cols[i]:
+            title, value, sub, *tone = item
+            cls = tone[0] if tone else "neutral"
+            st.markdown(
+                f'<div class="stat-card"><div class="stat-label">{html.escape(title)}</div>'
+                f'<div class="stat-value">{html.escape(value)}</div>'
+                f'<div class="stat-sub {cls}">{html.escape(sub)}</div></div>',
+                unsafe_allow_html=True,
+            )
+
+    # ---------- middle row ----------
+    left, right = st.columns([1.75, 1], gap="large")
+
+    with left:
+        with st.container(border=True):
+            st.markdown('<div class="panel-head"><div><span class="panel-kicker">PERFORMANCE</span><h3>관심종목 실적 흐름</h3></div></div>', unsafe_allow_html=True)
+            groups = defaultdict(list)
+            for r in reports:
+                f = r.get("financial")
+                if f:
+                    key = (f.get("period"), f.get("prior_period"), f.get("basis"), f.get("currency"), f.get("unit"))
+                    groups[key].append((r, f))
+
+            if not groups:
+                st.info("종목 조사 결과가 들어오면 실적 흐름이 표시됩니다.")
+            else:
+                keys = list(groups)
+                key = (
+                    st.selectbox(
+                        "비교 기간·기준",
+                        keys,
+                        format_func=lambda k: f"{k[0]} 누적 / 전년 {k[1]} · {k[2]}",
+                        key="bi_period",
+                        label_visibility="collapsed",
+                    )
+                    if len(keys) > 1
+                    else keys[0]
+                )
+                bars = []
+                for r, f in groups[key]:
+                    prior = float(f.get("prior_operating_profit", 0) or 0)
+                    now = float(f.get("operating_profit", 0) or 0)
+                    if prior > 0:
+                        bars.append({"종목": r.get("name", ""), "증가율": (now / prior - 1) * 100})
+                if bars:
+                    df = pd.DataFrame(bars).sort_values("증가율", ascending=False)
+                    chart = alt.Chart(df).mark_bar(cornerRadiusEnd=5, size=24).encode(
+                        x=alt.X("증가율:Q", title="영업이익 증가율 (%)", axis=alt.Axis(format="+.0f")),
+                        y=alt.Y("종목:N", sort="-x", title=None),
+                        color=alt.condition(
+                            alt.datum.증가율 >= 0,
+                            alt.value("#2563EB"),
+                            alt.value("#94A3B8"),
+                        ),
+                        tooltip=[
+                            alt.Tooltip("종목:N"),
+                            alt.Tooltip("증가율:Q", format="+.1f", title="증가율"),
+                        ],
+                    ).properties(height=max(250, min(390, len(df) * 42)))
+                    draw(chart)
+                else:
+                    st.info("비교 가능한 전년 영업이익 자료가 없습니다.")
+                st.caption(f"{key[0]} / {key[1]} · {key[2]} · 같은 기준의 조사자료만 비교")
+
+    with right:
+        with st.container(border=True):
+            st.markdown('<div class="panel-head"><div><span class="panel-kicker">WATCHLIST</span><h3>관심 종목</h3></div></div>', unsafe_allow_html=True)
+            items = []
+            for key, (stock, r, trend, frame) in details.items():
+                f = r.get("financial") if r else None
+                growth_value = None
+                if f:
+                    try:
+                        prior = float(f.get("operating_profit", 0) or 0)
+                        before = float(f.get("prior_operating_profit", 0) or 0)
+                        if before:
+                            growth_value = (prior / before - 1) * 100
+                    except Exception:
+                        pass
+                items.append((stock.get("name", ""), trend.get("daily", "-"), growth_value))
+
+            if items:
+                for name, daily, growth_value in items[:8]:
+                    growth_text = f"{growth_value:+.1f}%" if growth_value is not None else "조사 필요"
+                    cls = "up" if growth_value is not None and growth_value >= 0 else "neutral"
+                    st.markdown(
+                        f'<div class="watch-row"><div><strong>{html.escape(name)}</strong>'
+                        f'<small>영업이익 성장</small></div><div class="watch-value {cls}">'
+                        f'{html.escape(growth_text)}<small>일봉 {html.escape(str(daily))}</small></div></div>',
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.info("관심종목을 추가해 주세요.")
+
+    # ---------- bottom row ----------
+    left2, mid2, right2 = st.columns([1.35, 1, 1], gap="large")
+
+    with left2:
+        with st.container(border=True):
+            st.markdown('<div class="panel-head"><div><span class="panel-kicker">HOLDINGS</span><h3>보유 종목</h3></div></div>', unsafe_allow_html=True)
+            if positions:
+                df = pd.DataFrame([
+                    {
+                        "종목": p.get("name", ""),
+                        "평가금액": float(p.get("value", 0) or 0),
+                        "손익": float(p.get("pnl", 0) or 0),
+                    }
+                    for p in positions
+                ])
+                st.dataframe(
+                    df.style.format({"평가금액": "{:,.0f}원", "손익": "{:+,.0f}원"}),
+                    hide_index=True,
+                    use_container_width=True,
+                    height=min(320, 52 + len(df) * 35),
+                )
+            else:
+                st.markdown("**계좌를 연결하면 보유 종목이 표시됩니다.**")
+                st.caption("왼쪽 메뉴의 계좌 연결에서 조회할 수 있습니다.")
+
+    with mid2:
+        with st.container(border=True):
+            st.markdown('<div class="panel-head"><div><span class="panel-kicker">ALLOCATION</span><h3>포트폴리오 비중</h3></div></div>', unsafe_allow_html=True)
+            if positions:
+                df = pd.DataFrame([
+                    {"종목": p.get("name", ""), "평가액": float(p.get("value", 0) or 0)}
+                    for p in positions if float(p.get("value", 0) or 0) > 0
+                ])
+                if not df.empty:
+                    chart = alt.Chart(df).mark_arc(innerRadius=48, outerRadius=82).encode(
+                        theta="평가액:Q",
+                        color=alt.Color(
+                            "종목:N",
+                            scale=alt.Scale(range=["#2563EB", "#60A5FA", "#93C5FD", "#CBD5E1", "#64748B", "#1E3A8A"]),
+                            legend=alt.Legend(orient="bottom", columns=2),
+                        ),
+                        tooltip=["종목", alt.Tooltip("평가액:Q", format=",.0f")],
+                    ).properties(height=255)
+                    draw(chart)
+            else:
+                st.caption("계좌 연결 후 종목별 평가금액 비중을 확인할 수 있습니다.")
+
+    with right2:
+        with st.container(border=True):
+            st.markdown('<div class="panel-head"><div><span class="panel-kicker">RESEARCH</span><h3>최근 조사 현황</h3></div></div>', unsafe_allow_html=True)
+            if reports:
+                for r in sorted(reports, key=lambda x: x.get("as_of", ""), reverse=True)[:6]:
+                    st.markdown(
+                        f'<div class="research-row"><strong>{html.escape(r.get("name", ""))}</strong>'
+                        f'<span>{html.escape(r.get("as_of", "미조사"))}</span></div>',
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.info("아직 조사 결과가 없습니다.")
+            st.caption("실시간 시세가 아닌 저장된 조사자료 기준입니다.")
 
 
 def detail(r):
@@ -106,7 +253,7 @@ def detail(r):
             df=pd.DataFrame([{'기간':f['prior_period'],'영업이익':f['prior_operating_profit']},{'기간':f['period'],'영업이익':f['operating_profit']}])
             draw(alt.Chart(df).mark_bar(size=45,cornerRadiusTopLeft=4,cornerRadiusTopRight=4).encode(
                 x=alt.X('기간:O',title=None,axis=alt.Axis(labelAngle=0)),y=alt.Y('영업이익:Q',title=f['unit']),
-                color=alt.Color('기간:N',scale=alt.Scale(range=['#d8c8a7',GOLD]),legend=None),tooltip=['기간',alt.Tooltip('영업이익:Q',format=',.1f')]).properties(height=210))
+                color=alt.Color('기간:N',scale=alt.Scale(range=['#CBD5E1','#2563EB']),legend=None),tooltip=['기간',alt.Tooltip('영업이익:Q',format=',.1f')]).properties(height=210))
             margin=f['operating_profit']/f['revenue']*100 if f['revenue']>0 else None
             st.caption(f"{f['basis']} · {f['currency']} {f['unit']}"+(f' · 영업이익률 {margin:.1f}%' if margin is not None else ''))
         else:st.info('같은 기간의 전년·당년 실적이 필요합니다.')
@@ -115,7 +262,7 @@ def detail(r):
         v=r.get('valuation')
         if v:
             df=pd.DataFrame([{'구분':label,'가격':v[k]} for k,label in [('low','낮은 참고가'),('base','기본 참고가'),('high','높은 참고가'),('current_price','비교 주가')]])
-            draw(alt.Chart(df).mark_point(filled=True,size=130).encode(x=alt.X('가격:Q',title='원',scale=alt.Scale(zero=False)),y=alt.Y('구분:N',title=None),color=alt.value(TEAL),tooltip=['구분','가격']).properties(height=160))
+            draw(alt.Chart(df).mark_point(filled=True,size=130).encode(x=alt.X('가격:Q',title='원',scale=alt.Scale(zero=False)),y=alt.Y('구분:N',title=None),color=alt.value('#2563EB'),tooltip=['구분','가격']).properties(height=160))
             st.metric('기본 참고가',f"{v['base']:,.0f}원")
             st.caption(f"가격 기준일 {v['price_date']} · 평가 가정은 상세 탭에서 확인")
         else:
@@ -125,4 +272,4 @@ def detail(r):
 
 def peers_chart(peers):
     df=pd.DataFrame(peers['rows']).rename(columns={'name':'기업','operating_profit':'영업이익'})
-    draw(alt.Chart(df).mark_bar(color=TEAL,cornerRadiusEnd=4).encode(x=alt.X('영업이익:Q',title=peers['unit']),y=alt.Y('기업:N',sort='-x',title=None),tooltip=['기업',alt.Tooltip('영업이익:Q',format=',.1f')]).properties(height=max(150,min(400,len(df)*45))))
+    draw(alt.Chart(df).mark_bar(color='#2563EB',cornerRadiusEnd=4).encode(x=alt.X('영업이익:Q',title=peers['unit']),y=alt.Y('기업:N',sort='-x',title=None),tooltip=['기업',alt.Tooltip('영업이익:Q',format=',.1f')]).properties(height=max(150,min(400,len(df)*45))))
