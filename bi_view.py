@@ -2,6 +2,7 @@
 from collections import defaultdict
 import html
 
+import requests
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -47,6 +48,46 @@ def _trend_class(value):
         return "up" if float(value) >= 0 else "down"
     except Exception:
         return "neutral"
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _major_indices():
+    """Fetch major market indices from Yahoo Finance chart data."""
+    symbols = [
+        ("KOSPI", "코스피", "^KS11"),
+        ("KOSDAQ", "코스닥", "^KQ11"),
+        ("S&P 500", "S&P 500", "^GSPC"),
+        ("NASDAQ", "나스닥", "^IXIC"),
+        ("Dow", "다우존스", "^DJI"),
+        ("Nikkei 225", "닛케이 225", "^N225"),
+    ]
+    rows = []
+    for key, label, symbol in symbols:
+        try:
+            response = requests.get(
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
+                params={"range": "5d", "interval": "1d", "events": "history"},
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=5,
+            )
+            response.raise_for_status()
+            meta = response.json()["chart"]["result"][0]["meta"]
+            price = meta.get("regularMarketPrice")
+            previous = meta.get("chartPreviousClose") or meta.get("previousClose")
+            if price is None:
+                continue
+            change = float(price) - float(previous) if previous is not None else None
+            pct = (change / float(previous) * 100) if previous else None
+            rows.append({
+                "key": key,
+                "label": label,
+                "price": float(price),
+                "change": change,
+                "pct": pct,
+            })
+        except Exception:
+            continue
+    return rows
 
 
 def overview(details, snapshot):
@@ -227,17 +268,25 @@ def overview(details, snapshot):
 
     with right2:
         with st.container(border=True):
-            st.markdown('<div class="panel-head"><div><span class="panel-kicker">RESEARCH</span><h3>최근 조사 현황</h3></div></div>', unsafe_allow_html=True)
-            if reports:
-                for r in sorted(reports, key=lambda x: x.get("as_of", ""), reverse=True)[:6]:
+            st.markdown('<div class="panel-head"><div><span class="panel-kicker">MARKET INDEX</span><h3>주요 지수</h3></div><span style="font-size:11px;color:#94A3B8;">5분 캐시</span></div>', unsafe_allow_html=True)
+            indices = _major_indices()
+            if indices:
+                for item in indices:
+                    pct = item["pct"]
+                    change = item["change"]
+                    cls = _trend_class(pct)
+                    pct_text = f"{pct:+.2f}%" if pct is not None else "-"
+                    change_text = f"{change:+,.2f}" if change is not None else "-"
                     st.markdown(
-                        f'<div class="research-row"><strong>{html.escape(r.get("name", ""))}</strong>'
-                        f'<span>{html.escape(r.get("as_of", "미조사"))}</span></div>',
+                        f'<div class="research-row"><div><strong>{html.escape(item["label"])}</strong>'
+                        f'<span style="display:block;font-size:10px;color:#94A3B8;">{html.escape(item["key"])}</span></div>'
+                        f'<div style="text-align:right;"><strong>{item["price"]:,.2f}</strong>'
+                        f'<span class="{cls}" style="display:block;font-size:11px;font-weight:700;">{change_text} ({pct_text})</span></div></div>',
                         unsafe_allow_html=True,
                     )
             else:
-                st.info("아직 조사 결과가 없습니다.")
-            st.caption("실시간 시세가 아닌 저장된 조사자료 기준입니다.")
+                st.info("주요 지수 데이터를 불러오지 못했습니다.")
+            st.caption("KOSPI · KOSDAQ · S&P 500 · NASDAQ · Dow · Nikkei 225 · Yahoo Finance 기준")
 
 
 def detail(r):
