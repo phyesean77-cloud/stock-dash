@@ -846,10 +846,24 @@ def render_placeholder(title, subtitle, required):
 
 if nav == "대시보드":
     render_dashboard()
+elif nav == "종목 분석":
+    render_stock()
+elif nav == "공시 분석":
+    render_disclosures()
+elif nav == "시장 현황":
+    render_market()
+elif nav == "테마 & 섹터":
+    render_placeholder("테마 & 섹터", "산업별 흐름을 확인합니다.", [("업종 강도", "sector.performance", "업종별 등락과 거래대금"), ("업종 수급", "sector.flow", "외국인·기관 자금 흐름"), ("산업 수출", "industry.export", "품목별 수출 변화")])
 elif nav == "포트폴리오":
     render_portfolio(store, sample_mode)
+elif nav == "관심 종목":
+    render_watchlist()
+elif nav == "AI 인사이트":
+    render_ai()
 elif nav == "교육자료":
     render_education()
+elif nav == "설정":
+    render_sources()
 else:
     st.header("설정과 추가 도구")
     st.caption("계좌 연결 없이도 내 종목을 추가하고 조사 결과를 확인할 수 있습니다.")
