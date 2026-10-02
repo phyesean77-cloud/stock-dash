@@ -44,7 +44,51 @@ try:
 except FileNotFoundError:
     pass
 
+
+def apply_dashboard_theme():
+    st.markdown("""
+<style>
+/* StockDash Dashboard 2026 */
+.stApp{background:#f4f7fb!important}
+.block-container{max-width:1500px!important;padding:24px 32px 56px!important}
+section[data-testid="stSidebar"]{background:#ffffff!important;border-right:1px solid #e7ebf2!important}
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{border-radius:12px!important;padding:10px 12px!important;color:#526176!important}
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){background:#edf4ff!important;box-shadow:inset 3px 0 #2563eb!important;color:#1d4ed8!important}
+.sd-top{display:flex;justify-content:space-between;align-items:center;margin:2px 0 18px}
+.sd-title{font-size:28px;font-weight:850;letter-spacing:-.045em;color:#172033}
+.sd-sub{font-size:13px;color:#7b8799;margin-top:5px}
+.sd-status{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:#ecfdf5;border:1px solid #bbf7d0;color:#047857;font-size:12px;font-weight:750}
+.sd-dot{width:7px;height:7px;border-radius:50%;background:#10b981}
+.sd-hero{background:linear-gradient(135deg,#172a4d 0%,#1f4d8f 60%,#2563eb 100%);border-radius:22px;padding:28px 30px;color:white;margin:0 0 20px;box-shadow:0 18px 40px rgba(30,64,120,.16)}
+.sd-hero .eyebrow{font-size:11px;letter-spacing:.12em;font-weight:800;opacity:.72}
+.sd-hero h1{font-size:32px;color:white;margin:8px 0 6px;letter-spacing:-.045em}
+.sd-hero p{font-size:14px;color:#dce8fb;margin:0;max-width:720px}
+.sd-card{background:#fff;border:1px solid #e6ebf2;border-radius:17px;padding:18px 19px;box-shadow:0 7px 24px rgba(30,50,80,.035);height:100%}
+.sd-card-title{font-size:12px;color:#7b8799;font-weight:700}
+.sd-card-value{font-size:24px;font-weight:850;color:#172033;letter-spacing:-.035em;margin-top:8px}
+.sd-card-change{font-size:12px;font-weight:750;margin-top:7px}
+.sd-up{color:#059669}.sd-down{color:#dc2626}.sd-muted{color:#9aa6b5}
+.sd-section{font-size:18px;font-weight:820;color:#172033;margin:24px 0 12px;letter-spacing:-.025em}
+.sd-panel{background:#fff;border:1px solid #e6ebf2;border-radius:18px;padding:20px;box-shadow:0 7px 24px rgba(30,50,80,.03)}
+.sd-panel-title{font-size:15px;font-weight:800;color:#172033;margin-bottom:4px}
+.sd-panel-sub{font-size:11px;color:#8a96a8;margin-bottom:14px}
+.sd-donut{width:178px;height:178px;border-radius:50%;margin:10px auto 12px;position:relative}
+.sd-donut:after{content:"";position:absolute;inset:42px;background:#fff;border-radius:50%}
+.sd-donut-label{position:absolute;z-index:2;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;font-weight:850;color:#172033}
+.sd-donut-label small{font-size:10px;color:#8a96a8;font-weight:600}
+.sd-holding{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #eef1f5}
+.sd-holding:last-child{border-bottom:0}
+.sd-holding-name{font-size:13px;font-weight:750;color:#253247}
+.sd-holding-meta{font-size:11px;color:#8a96a8;margin-top:2px}
+.sd-holding-value{font-size:13px;font-weight:800;color:#253247;text-align:right}
+.sd-empty{border:1px dashed #cfd7e3;background:#fbfcfe;border-radius:14px;padding:22px;color:#718096}
+.sd-table{background:#fff;border:1px solid #e6ebf2;border-radius:16px;padding:4px}
+@media(max-width:800px){.block-container{padding:18px 14px 40px!important}.sd-hero h1{font-size:27px}.sd-title{font-size:24px}}
+</style>
+""", unsafe_allow_html=True)
+
 apply_theme()
+apply_dashboard_theme()
 
 
 class SessionStore:
@@ -236,11 +280,11 @@ if latest:
 if st.session_state.get("force_nav"):
     st.session_state.nav_choice = st.session_state.pop("force_nav")
 
-NAV_ITEMS = ["내 종목", "계좌 연결", "교육자료", "설정"]
-legacy = {"통합 분석":"내 종목", "홈":"내 종목", "AI 인사이트":"내 종목", "관심 종목":"내 종목", "포트폴리오":"계좌 연결"}
-current = st.session_state.get("nav_choice", "내 종목")
+NAV_ITEMS = ["대시보드", "종목 분석", "공시 분석", "시장 현황", "테마 & 섹터", "포트폴리오", "관심 종목", "AI 인사이트", "설정"]
+legacy = {"내 종목":"대시보드", "통합 분석":"대시보드", "홈":"대시보드", "계좌 연결":"포트폴리오"}
+current = st.session_state.get("nav_choice", "대시보드")
 if current not in NAV_ITEMS:
-    st.session_state.nav_choice = legacy.get(current, "설정")
+    st.session_state.nav_choice = legacy.get(current, "대시보드")
     if current not in legacy:
         st.session_state.advanced_page = current
 
@@ -318,6 +362,89 @@ def global_search():
                 )
                 if st.form_submit_button("이 종목 분석", type="primary"):
                     run_analysis(candidate["code"])
+
+
+
+def _html_card(title, value, change="", tone="muted"):
+    cls={"up":"sd-up","down":"sd-down"}.get(tone,"sd-muted")
+    return f'<div class="sd-card"><div class="sd-card-title">{title}</div><div class="sd-card-value">{value}</div><div class="sd-card-change {cls}">{change}</div></div>'
+
+def _portfolio_donut(positions):
+    if not positions:
+        return '<div class="sd-empty">계좌를 연결하면 실제 보유 비중이 원형 차트로 표시됩니다.</div>'
+    weights=[max(float(p.get("weight",0)),0) for p in positions]
+    total=sum(weights) or 1
+    palette=["#2563eb","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#f97316","#64748b"]
+    stops=[]; cursor=0
+    for i,w in enumerate(weights):
+        end=cursor+w/total*360
+        stops.append(f"{palette[i%len(palette)]} {cursor:.1f}deg {end:.1f}deg")
+        cursor=end
+    gradient=", ".join(stops)
+    return f'''<div class="sd-donut" style="background:conic-gradient({gradient})">
+      <div class="sd-donut-label"><span>{total:.0f}%</span><small>보유 비중</small></div>
+    </div>'''
+
+def render_dashboard():
+    snapshot=st.session_state.get("account_snapshot") or {}
+    positions=snapshot.get("positions",[])
+    latest_stock=stock if stock and stock.get("code")!="SAMPLE" else None
+    st.markdown('''<div class="sd-top"><div><div class="sd-title">StockDash</div><div class="sd-sub">시장 · 포트폴리오 · 관심종목을 한 화면에서 확인하세요.</div></div><div class="sd-status"><span class="sd-dot"></span> Dashboard</div></div>''',unsafe_allow_html=True)
+    st.markdown('''<div class="sd-hero"><div class="eyebrow">STOCK DASHBOARD</div><h1>오늘의 투자 화면</h1><p>주요 시장 흐름과 내 포트폴리오, 관심종목의 핵심 정보를 빠르게 확인할 수 있도록 구성했습니다.</p></div>''',unsafe_allow_html=True)
+    global_search()
+
+    st.markdown('<div class="sd-section">주요 지수</div>',unsafe_allow_html=True)
+    idx=st.columns(4)
+    for col,title,cap in zip(idx,["KOSPI","KOSDAQ","S&P 500","NASDAQ"],["market.index","market.index","market.index","market.index"]):
+        with col: st.markdown(_html_card(title,"연결 대기","실시간 지수 API 필요 · "+cap),unsafe_allow_html=True)
+
+    st.markdown('<div class="sd-section">포트폴리오</div>',unsafe_allow_html=True)
+    p1,p2,p3,p4=st.columns(4)
+    if snapshot:
+        cards=[("평가금액",f"{snapshot.get('value',0):,.0f}원","계좌 조회 기준"),
+               ("평가손익",f"{snapshot.get('pnl',0):+,.0f}원","조회 시점 기준","up" if snapshot.get("pnl",0)>=0 else "down"),
+               ("예수금",f"{snapshot.get('cash'):,.0f}원" if snapshot.get("cash") is not None else "미수집","KIS 계좌 기준"),
+               ("보유종목",f"{len(positions)}개","국내주식")]
+        for col,data in zip([p1,p2,p3,p4],cards):
+            with col: st.markdown(_html_card(*data),unsafe_allow_html=True)
+    else:
+        for col,title in zip([p1,p2,p3,p4],["평가금액","평가손익","예수금","보유종목"]):
+            with col: st.markdown(_html_card(title,"계좌 연결 대기","포트폴리오에서 계좌를 연결하세요"),unsafe_allow_html=True)
+
+    left,right=st.columns([1.15,1])
+    with left:
+        st.markdown('<div class="sd-panel"><div class="sd-panel-title">포트폴리오 비중</div><div class="sd-panel-sub">보유 국내주식 평가액 기준</div>',unsafe_allow_html=True)
+        if positions:
+            st.markdown(_portfolio_donut(positions),unsafe_allow_html=True)
+            for p in sorted(positions,key=lambda x:float(x.get("weight",0)),reverse=True)[:6]:
+                st.markdown(f'''<div class="sd-holding"><div><div class="sd-holding-name">{p.get("name","")}</div><div class="sd-holding-meta">{p.get("code","")}</div></div><div class="sd-holding-value">{float(p.get("weight",0)):.1f}%</div></div>''',unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="sd-empty">아직 계좌 데이터가 없습니다.<br><br>포트폴리오 메뉴에서 계좌를 연결하면 실제 보유 비중과 원형 차트가 자동으로 표시됩니다.</div>',unsafe_allow_html=True)
+        st.markdown('</div>',unsafe_allow_html=True)
+
+    with right:
+        st.markdown('<div class="sd-panel"><div class="sd-panel-title">관심종목</div><div class="sd-panel-sub">저장된 종목의 최근 분석 상태</div>',unsafe_allow_html=True)
+        watch=[x for x in choices.values() if x.get("code")!="SAMPLE"]
+        if watch:
+            for x in watch[:7]:
+                report_x=x.get("report") or {}
+                price=report_x.get("price")
+                val=f"{price:,.0f}원" if isinstance(price,(int,float)) else "분석 대기"
+                st.markdown(f'''<div class="sd-holding"><div><div class="sd-holding-name">{x.get("name","")}</div><div class="sd-holding-meta">{x.get("code","") if not str(x.get("code","")).startswith("pending-") else "코드 확인 대기"}</div></div><div class="sd-holding-value">{val}</div></div>''',unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="sd-empty">저장된 관심종목이 없습니다.<br><br>관심 종목 메뉴에서 종목을 추가하세요.</div>',unsafe_allow_html=True)
+        st.markdown('</div>',unsafe_allow_html=True)
+
+    st.markdown('<div class="sd-section">최근 공시</div>',unsafe_allow_html=True)
+    if latest_stock and latest_stock.get("report"):
+        notices=sorted(latest_stock["report"].get("disclosures",[]),key=lambda x:x.get("date",""),reverse=True)
+        if notices:
+            for item in notices[:5]:
+                st.link_button(item["date"]+" · "+item["title"],item["url"],use_container_width=True)
+        else:
+            st.markdown('<div class="sd-empty">선택 종목의 최근 공시가 없습니다.</div>',unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="sd-empty">종목을 검색하면 해당 기업의 공식 공시가 이 영역에 표시됩니다.</div>',unsafe_allow_html=True)
 
 
 def render_home():
@@ -717,9 +844,9 @@ def render_placeholder(title, subtitle, required):
                 st.caption(cap)
 
 
-if nav == "내 종목":
-    render_research(store, state, sample_mode)
-elif nav == "계좌 연결":
+if nav == "대시보드":
+    render_dashboard()
+elif nav == "포트폴리오":
     render_portfolio(store, sample_mode)
 elif nav == "교육자료":
     render_education()
